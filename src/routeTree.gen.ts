@@ -9,8 +9,44 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as StrategyLabRouteImport } from './routes/strategy-lab'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as RiskRouteImport } from './routes/risk'
+import { Route as ReplayRouteImport } from './routes/replay'
+import { Route as JournalRouteImport } from './routes/journal'
+import { Route as DeskRouteImport } from './routes/desk'
 import { Route as IndexRouteImport } from './routes/index'
 
+const StrategyLabRoute = StrategyLabRouteImport.update({
+  id: '/strategy-lab',
+  path: '/strategy-lab',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RiskRoute = RiskRouteImport.update({
+  id: '/risk',
+  path: '/risk',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReplayRoute = ReplayRouteImport.update({
+  id: '/replay',
+  path: '/replay',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JournalRoute = JournalRouteImport.update({
+  id: '/journal',
+  path: '/journal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeskRoute = DeskRouteImport.update({
+  id: '/desk',
+  path: '/desk',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +55,116 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/desk': typeof DeskRoute
+  '/journal': typeof JournalRoute
+  '/replay': typeof ReplayRoute
+  '/risk': typeof RiskRoute
+  '/settings': typeof SettingsRoute
+  '/strategy-lab': typeof StrategyLabRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/desk': typeof DeskRoute
+  '/journal': typeof JournalRoute
+  '/replay': typeof ReplayRoute
+  '/risk': typeof RiskRoute
+  '/settings': typeof SettingsRoute
+  '/strategy-lab': typeof StrategyLabRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/desk': typeof DeskRoute
+  '/journal': typeof JournalRoute
+  '/replay': typeof ReplayRoute
+  '/risk': typeof RiskRoute
+  '/settings': typeof SettingsRoute
+  '/strategy-lab': typeof StrategyLabRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/desk'
+    | '/journal'
+    | '/replay'
+    | '/risk'
+    | '/settings'
+    | '/strategy-lab'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/desk'
+    | '/journal'
+    | '/replay'
+    | '/risk'
+    | '/settings'
+    | '/strategy-lab'
+  id:
+    | '__root__'
+    | '/'
+    | '/desk'
+    | '/journal'
+    | '/replay'
+    | '/risk'
+    | '/settings'
+    | '/strategy-lab'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DeskRoute: typeof DeskRoute
+  JournalRoute: typeof JournalRoute
+  ReplayRoute: typeof ReplayRoute
+  RiskRoute: typeof RiskRoute
+  SettingsRoute: typeof SettingsRoute
+  StrategyLabRoute: typeof StrategyLabRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/strategy-lab': {
+      id: '/strategy-lab'
+      path: '/strategy-lab'
+      fullPath: '/strategy-lab'
+      preLoaderRoute: typeof StrategyLabRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/risk': {
+      id: '/risk'
+      path: '/risk'
+      fullPath: '/risk'
+      preLoaderRoute: typeof RiskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/replay': {
+      id: '/replay'
+      path: '/replay'
+      fullPath: '/replay'
+      preLoaderRoute: typeof ReplayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/journal': {
+      id: '/journal'
+      path: '/journal'
+      fullPath: '/journal'
+      preLoaderRoute: typeof JournalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/desk': {
+      id: '/desk'
+      path: '/desk'
+      fullPath: '/desk'
+      preLoaderRoute: typeof DeskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,6 +177,12 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DeskRoute: DeskRoute,
+  JournalRoute: JournalRoute,
+  ReplayRoute: ReplayRoute,
+  RiskRoute: RiskRoute,
+  SettingsRoute: SettingsRoute,
+  StrategyLabRoute: StrategyLabRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
