@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Bell, ChevronDown, Lock, Octagon, User } from "lucide-react";
-import { symbols, strategies, modes, type TradingMode } from "@/data/placeholder";
+import { symbols, modes, type TradingMode } from "@/data/placeholder";
 import { LiveClock } from "@/components/trading/LiveClock";
+import { strategyNames } from "@/lib/strategy";
 import { cn } from "@/lib/utils";
 
 export function TopBar() {
   const [selectedSymbol, setSelectedSymbol] = useState(symbols[0]);
-  const [selectedStrategy, setSelectedStrategy] = useState(strategies[0]);
+  const [selectedStrategy, setSelectedStrategy] = useState(strategyNames[0] ?? "Sweep Long");
   const [mode, setMode] = useState<TradingMode>("Assist");
   const [symbolOpen, setSymbolOpen] = useState(false);
   const [strategyOpen, setStrategyOpen] = useState(false);
@@ -19,7 +20,9 @@ export function TopBar() {
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary">
             <span className="text-xs font-bold text-primary-foreground">AI</span>
           </div>
-          <span className="text-sm font-semibold tracking-tight text-foreground">Trading Office</span>
+          <span className="text-sm font-semibold tracking-tight text-foreground">
+            Trading Office
+          </span>
         </div>
       </div>
 
@@ -28,13 +31,24 @@ export function TopBar() {
         {/* Symbol Selector */}
         <div className="relative">
           <button
-            onClick={() => { setSymbolOpen(!symbolOpen); setStrategyOpen(false); }}
+            onClick={() => {
+              setSymbolOpen(!symbolOpen);
+              setStrategyOpen(false);
+            }}
             className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-1.5 text-sm hover:bg-surface-3 transition-colors"
           >
             <span className="font-semibold text-foreground">{selectedSymbol.symbol}</span>
-            <span className="text-price text-xs">{selectedSymbol.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-            <span className={cn("text-xs font-medium", selectedSymbol.change >= 0 ? "text-positive" : "text-negative")}>
-              {selectedSymbol.change >= 0 ? "+" : ""}{selectedSymbol.changePct.toFixed(2)}%
+            <span className="text-price text-xs">
+              {selectedSymbol.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </span>
+            <span
+              className={cn(
+                "text-xs font-medium",
+                selectedSymbol.change >= 0 ? "text-positive" : "text-negative",
+              )}
+            >
+              {selectedSymbol.change >= 0 ? "+" : ""}
+              {selectedSymbol.changePct.toFixed(2)}%
             </span>
             <ChevronDown className="h-3 w-3 text-muted-foreground" />
           </button>
@@ -43,10 +57,13 @@ export function TopBar() {
               {symbols.map((s) => (
                 <button
                   key={s.symbol}
-                  onClick={() => { setSelectedSymbol(s); setSymbolOpen(false); }}
+                  onClick={() => {
+                    setSelectedSymbol(s);
+                    setSymbolOpen(false);
+                  }}
                   className={cn(
                     "flex w-full items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-surface-3",
-                    s.symbol === selectedSymbol.symbol && "bg-primary/10"
+                    s.symbol === selectedSymbol.symbol && "bg-primary/10",
                   )}
                 >
                   <div className="flex items-center gap-2">
@@ -54,9 +71,14 @@ export function TopBar() {
                     <span className="text-xs text-muted-foreground">{s.name}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-price text-xs">{s.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                    <span className={cn("text-xs", s.change >= 0 ? "text-positive" : "text-negative")}>
-                      {s.change >= 0 ? "+" : ""}{s.changePct.toFixed(2)}%
+                    <span className="text-price text-xs">
+                      {s.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </span>
+                    <span
+                      className={cn("text-xs", s.change >= 0 ? "text-positive" : "text-negative")}
+                    >
+                      {s.change >= 0 ? "+" : ""}
+                      {s.changePct.toFixed(2)}%
                     </span>
                   </div>
                 </button>
@@ -68,7 +90,10 @@ export function TopBar() {
         {/* Strategy Selector */}
         <div className="relative">
           <button
-            onClick={() => { setStrategyOpen(!strategyOpen); setSymbolOpen(false); }}
+            onClick={() => {
+              setStrategyOpen(!strategyOpen);
+              setSymbolOpen(false);
+            }}
             className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-1.5 text-sm hover:bg-surface-3 transition-colors"
           >
             <span className="text-muted-foreground text-xs">Strategy:</span>
@@ -77,13 +102,16 @@ export function TopBar() {
           </button>
           {strategyOpen && (
             <div className="absolute top-full left-0 z-50 mt-1 w-48 rounded-lg border border-border bg-surface-1 p-1 shadow-xl">
-              {strategies.map((s) => (
+              {strategyNames.map((s) => (
                 <button
                   key={s}
-                  onClick={() => { setSelectedStrategy(s); setStrategyOpen(false); }}
+                  onClick={() => {
+                    setSelectedStrategy(s);
+                    setStrategyOpen(false);
+                  }}
                   className={cn(
                     "w-full rounded-md px-3 py-2 text-left text-sm hover:bg-surface-3",
-                    s === selectedStrategy && "bg-primary/10 text-primary"
+                    s === selectedStrategy && "bg-primary/10 text-primary",
                   )}
                 >
                   {s}
@@ -99,7 +127,11 @@ export function TopBar() {
             const active = m === mode;
             const isAutoLive = m === "Auto Live";
             const colorClass = active
-              ? m === "Auto Paper" ? "bg-success/20 text-success" : m === "Auto Live" ? "bg-danger/20 text-danger" : "bg-primary/20 text-primary"
+              ? m === "Auto Paper"
+                ? "bg-success/20 text-success"
+                : m === "Auto Live"
+                  ? "bg-danger/20 text-danger"
+                  : "bg-primary/20 text-primary"
               : "text-muted-foreground hover:text-foreground";
             return (
               <button
@@ -109,7 +141,7 @@ export function TopBar() {
                 className={cn(
                   "flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
                   colorClass,
-                  isAutoLive && "opacity-40 cursor-not-allowed"
+                  isAutoLive && "opacity-40 cursor-not-allowed",
                 )}
               >
                 {isAutoLive && <Lock className="h-2.5 w-2.5" />}

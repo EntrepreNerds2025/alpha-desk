@@ -1,9 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { strategies } from "@/data/placeholder";
+import {
+  evaluateStrategy,
+  getMockContextForStrategy,
+  strategyByName,
+  strategyNames,
+} from "@/lib/strategy";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, CartesianGrid } from "recharts";
 
 export const Route = createFileRoute("/strategy-lab")({
   head: () => ({
@@ -15,37 +20,65 @@ export const Route = createFileRoute("/strategy-lab")({
   component: StrategyLabPage,
 });
 
-const strategyStats: Record<string, { winRate: number; avgR: number; sharpe: number; maxDD: number; trades: number }> = {
-  "Sweep Long": { winRate: 68, avgR: 1.8, sharpe: 1.42, maxDD: 820, trades: 124 },
-  "Sweep Short": { winRate: 62, avgR: 1.5, sharpe: 1.15, maxDD: 1100, trades: 87 },
-  "ORB Break": { winRate: 55, avgR: 2.1, sharpe: 0.98, maxDD: 1450, trades: 203 },
-  "Hourly Zone Trend": { winRate: 71, avgR: 1.3, sharpe: 1.65, maxDD: 540, trades: 156 },
-  "VWAP Reclaim": { winRate: 64, avgR: 1.6, sharpe: 1.28, maxDD: 780, trades: 98 },
-  "Failed Breakdown": { winRate: 59, avgR: 2.4, sharpe: 1.08, maxDD: 1200, trades: 62 },
+const strategyStats: Record<
+  string,
+  { winRate: number; avgR: number; sharpe: number; maxDD: number; trades: number }
+> = {
+  "Sweep Long": strategyByName["Sweep Long"].stats,
+  "Sweep Short": strategyByName["Sweep Short"].stats,
+  "ORB Break": strategyByName["ORB Break"].stats,
+  "Hourly Zone Trend": strategyByName["Hourly Zone Trend"].stats,
+  "VWAP Reclaim": strategyByName["VWAP Reclaim"].stats,
+  "Failed Breakdown": strategyByName["Failed Breakdown"].stats,
 };
 
-const recentTrades = Array.from({ length: 20 }, (_, i) => ({
-  trade: i + 1,
-  pnl: Math.round((Math.random() - 0.35) * 500),
-}));
+const recentTrades = [
+  { trade: 1, pnl: 220 },
+  { trade: 2, pnl: -90 },
+  { trade: 3, pnl: 160 },
+  { trade: 4, pnl: 240 },
+  { trade: 5, pnl: -140 },
+  { trade: 6, pnl: 310 },
+  { trade: 7, pnl: 95 },
+  { trade: 8, pnl: -65 },
+  { trade: 9, pnl: 180 },
+  { trade: 10, pnl: 75 },
+  { trade: 11, pnl: -110 },
+  { trade: 12, pnl: 285 },
+  { trade: 13, pnl: 120 },
+  { trade: 14, pnl: 190 },
+  { trade: 15, pnl: -80 },
+  { trade: 16, pnl: 260 },
+  { trade: 17, pnl: -55 },
+  { trade: 18, pnl: 145 },
+  { trade: 19, pnl: 90 },
+  { trade: 20, pnl: 205 },
+];
 
 function StrategyLabPage() {
-  const [selected, setSelected] = useState("Sweep Long");
-  const stats = strategyStats[selected];
+  const [selected, setSelected] = useState(strategyNames[0] ?? "Sweep Long");
+  const strategy = strategyByName[selected] ?? strategyByName["Sweep Long"];
+  const stats = strategyStats[selected] ?? strategyStats["Sweep Long"];
+  const evaluation = evaluateStrategy(strategy, getMockContextForStrategy(strategy.id));
+  const cooldown = strategy.cooldowns[0]?.minutes ?? 5;
 
   return (
     <AppLayout>
       <div className="flex h-full">
         {/* Strategy List */}
         <div className="w-56 border-r border-border p-3 space-y-1">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Strategies</h2>
-          {strategies.map((s) => (
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+            Strategies
+          </h2>
+          {strategyNames.map((s) => (
             <button
               key={s}
               onClick={() => setSelected(s)}
               className={cn(
                 "w-full rounded-lg px-3 py-2 text-left text-sm transition-colors",
-                s === selected ? "bg-primary/10 text-primary border-l-2 border-primary" : "text-muted-foreground hover:bg-surface-3 hover:text-foreground"
+                s === selected
+                  ? "bg-primary/10 text-primary border-l-2 border-primary"
+                  : "text-muted-foreground hover:bg-surface-3 hover:text-foreground",
               )}
             >
               {s}
@@ -61,7 +94,10 @@ function StrategyLabPage() {
         {/* Editor */}
         <div className="flex-1 p-4 space-y-4 overflow-y-auto scrollbar-thin">
           <div className="flex items-center justify-between">
-            <h1 className="text-lg font-semibold">{selected}</h1>
+            <div className="space-y-1">
+              <h1 className="text-lg font-semibold">{selected}</h1>
+              <p className="text-xs text-muted-foreground">{strategy.description}</p>
+            </div>
             <button className="rounded-lg border border-primary bg-primary/10 px-4 py-2 text-xs font-medium text-primary">
               Compare Strategies
             </button>
@@ -72,12 +108,12 @@ function StrategyLabPage() {
             <h3 className="text-sm font-semibold mb-3">Parameters</h3>
             <div className="grid grid-cols-2 gap-4">
               {[
-                { label: "Min Confidence", value: 55, max: 100 },
-                { label: "Max Risk per Trade ($)", value: 200, max: 500 },
-                { label: "Stop Distance (ticks)", value: 8, max: 20 },
-                { label: "Target Multiple (R)", value: 2.0, max: 5 },
-                { label: "Max Trades/Session", value: 6, max: 15 },
-                { label: "Cooldown (minutes)", value: 5, max: 30 },
+                { label: "Min Confidence", value: strategy.confidence.minExecutionScore, max: 100 },
+                { label: "Max Risk per Trade ($)", value: strategy.risk.maxRiskUsd, max: 1000 },
+                { label: "Stop Value", value: strategy.exit.stopValue, max: 50 },
+                { label: "Target Value", value: strategy.exit.targetValue, max: 100 },
+                { label: "Max Trades/Session", value: strategy.risk.maxTradesPerSession, max: 15 },
+                { label: "Cooldown (minutes)", value: cooldown, max: 30 },
               ].map((p) => (
                 <div key={p.label} className="space-y-1.5">
                   <div className="flex items-center justify-between">
@@ -98,13 +134,24 @@ function StrategyLabPage() {
 
           {/* Toggles */}
           <div className="rounded-lg border border-border bg-surface-2 p-4">
-            <h3 className="text-sm font-semibold mb-3">Rules</h3>
+            <h3 className="text-sm font-semibold mb-3">Condition Checklist</h3>
             <div className="grid grid-cols-2 gap-3">
-              {["Require volume confirmation", "News block active", "Session filter (NY only)", "Trend alignment required", "Auto scale-in enabled", "Trailing stop enabled"].map((rule) => (
-                <label key={rule} className="flex items-center gap-2 text-xs">
-                  <input type="checkbox" defaultChecked={Math.random() > 0.3} className="rounded accent-primary" />
-                  <span className="text-muted-foreground">{rule}</span>
-                </label>
+              {evaluation.conditionResults.map((condition) => (
+                <div
+                  key={condition.conditionId}
+                  className="rounded-md border border-border bg-surface-1 p-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        "h-2 w-2 rounded-full",
+                        condition.passed ? "bg-success" : "bg-warning",
+                      )}
+                    />
+                    <span className="text-xs font-medium">{condition.label}</span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">{condition.detail}</p>
+                </div>
               ))}
             </div>
           </div>
@@ -112,7 +159,9 @@ function StrategyLabPage() {
 
         {/* Results Panel */}
         <div className="w-72 border-l border-border p-4 space-y-4 overflow-y-auto scrollbar-thin">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Paper Test Results</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Evaluation Snapshot
+          </h3>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-lg bg-surface-2 p-3 text-center">
@@ -133,7 +182,42 @@ function StrategyLabPage() {
             </div>
           </div>
 
-          <div className="text-xs text-muted-foreground text-center">{stats.trades} trades analyzed</div>
+          <div className="rounded-lg border border-border bg-surface-2 p-3 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Conditions</span>
+              <span className="font-medium">
+                {evaluation.passedConditions}/{evaluation.totalConditions}
+              </span>
+            </div>
+            <div className="mt-2 flex items-center justify-between">
+              <span className="text-muted-foreground">Confidence</span>
+              <span
+                className={cn(
+                  "font-semibold",
+                  evaluation.confidence >= strategy.confidence.minExecutionScore
+                    ? "text-success"
+                    : "text-warning",
+                )}
+              >
+                {evaluation.confidence}%
+              </span>
+            </div>
+            <div className="mt-2 flex items-center justify-between">
+              <span className="text-muted-foreground">Executable</span>
+              <span
+                className={cn(
+                  "font-semibold",
+                  evaluation.executable ? "text-success" : "text-danger",
+                )}
+              >
+                {evaluation.executable ? "Yes" : "Blocked"}
+              </span>
+            </div>
+          </div>
+
+          <div className="text-xs text-muted-foreground text-center">
+            {stats.trades} trades analyzed
+          </div>
 
           {/* Recent P&L chart */}
           <div className="h-32">
