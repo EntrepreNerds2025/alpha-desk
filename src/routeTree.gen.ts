@@ -16,6 +16,7 @@ import { Route as ReplayRouteImport } from './routes/replay'
 import { Route as JournalRouteImport } from './routes/journal'
 import { Route as DeskRouteImport } from './routes/desk'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiWebhooksTradingviewRouteImport } from './routes/api/webhooks/tradingview'
 
 const StrategyLabRoute = StrategyLabRouteImport.update({
   id: '/strategy-lab',
@@ -52,6 +53,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWebhooksTradingviewRoute = ApiWebhooksTradingviewRouteImport.update({
+  id: '/api/webhooks/tradingview',
+  path: '/api/webhooks/tradingview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/risk': typeof RiskRoute
   '/settings': typeof SettingsRoute
   '/strategy-lab': typeof StrategyLabRoute
+  '/api/webhooks/tradingview': typeof ApiWebhooksTradingviewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +77,7 @@ export interface FileRoutesByTo {
   '/risk': typeof RiskRoute
   '/settings': typeof SettingsRoute
   '/strategy-lab': typeof StrategyLabRoute
+  '/api/webhooks/tradingview': typeof ApiWebhooksTradingviewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   '/risk': typeof RiskRoute
   '/settings': typeof SettingsRoute
   '/strategy-lab': typeof StrategyLabRoute
+  '/api/webhooks/tradingview': typeof ApiWebhooksTradingviewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
     | '/risk'
     | '/settings'
     | '/strategy-lab'
+    | '/api/webhooks/tradingview'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/risk'
     | '/settings'
     | '/strategy-lab'
+    | '/api/webhooks/tradingview'
   id:
     | '__root__'
     | '/'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/risk'
     | '/settings'
     | '/strategy-lab'
+    | '/api/webhooks/tradingview'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,6 +131,7 @@ export interface RootRouteChildren {
   RiskRoute: typeof RiskRoute
   SettingsRoute: typeof SettingsRoute
   StrategyLabRoute: typeof StrategyLabRoute
+  ApiWebhooksTradingviewRoute: typeof ApiWebhooksTradingviewRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -172,6 +185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/webhooks/tradingview': {
+      id: '/api/webhooks/tradingview'
+      path: '/api/webhooks/tradingview'
+      fullPath: '/api/webhooks/tradingview'
+      preLoaderRoute: typeof ApiWebhooksTradingviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -183,6 +203,7 @@ const rootRouteChildren: RootRouteChildren = {
   RiskRoute: RiskRoute,
   SettingsRoute: SettingsRoute,
   StrategyLabRoute: StrategyLabRoute,
+  ApiWebhooksTradingviewRoute: ApiWebhooksTradingviewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
