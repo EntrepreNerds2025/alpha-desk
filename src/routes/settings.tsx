@@ -1,8 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useEffect, useState } from "react";
+import { getClientEnvStatus } from "@/lib/config/client-env";
 import { cn } from "@/lib/utils";
 import { getTradingViewWebhookUrl, tradingViewAlertTemplates } from "@/data/tradingview";
+import {
+  complianceChecklistLabels,
+  hasCompletedComplianceChecklist,
+} from "@/lib/risk/prop-firm-compliance";
+import { useTradingControls } from "@/lib/trading-controls";
 import { User, Monitor, Wifi, Database, Bot, Bell, Palette, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/settings")({
@@ -32,6 +38,8 @@ function SettingsPage() {
     "https://api.ai-trading-office.app/api/webhooks/tradingview",
   );
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const { state, setPaperTradingDays, setRiskPatch } = useTradingControls();
+  const envStatus = getClientEnvStatus();
 
   useEffect(() => {
     setWebhookUrl(getTradingViewWebhookUrl());
@@ -244,7 +252,122 @@ function SettingsPage() {
             </div>
           )}
 
-          {!["Profile", "TradingView", "Broker", "AI Providers"].includes(active) && (
+          {active === "Data Providers" && (
+            <div className="space-y-6">
+              <h1 className="text-lg font-semibold">Data Providers</h1>
+              <div className="rounded-lg border border-border bg-surface-2 p-4">
+                <h2 className="text-sm font-semibold">Stack Readiness</h2>
+                <div className="mt-3 grid grid-cols-1 gap-3">
+                  {[
+                    {
+                      label: "Public API Base URL",
+                      ok: envStatus.apiBaseConfigured,
+                      detail: "Used for webhook/docs links and future worker endpoint references.",
+                    },
+                    {
+                      label: "Supabase Frontend Config",
+                      ok: envStatus.supabaseConfigured,
+                      detail:
+                        "Required for auth, realtime subscriptions, and database reads in UI.",
+                    },
+                    {
+                      label: "Sentry DSN",
+                      ok: envStatus.sentryConfigured,
+                      detail: "Optional but recommended for frontend crash capture.",
+                    },
+                  ].map((item) => (
+                    <div
+                      key={item.label}
+                      className="rounded-md border border-border bg-surface-1 p-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-foreground">{item.label}</span>
+                        <span
+                          className={cn(
+                            "text-[10px] font-semibold uppercase tracking-wider",
+                            item.ok ? "text-success" : "text-warning",
+                          )}
+                        >
+                          {item.ok ? "Configured" : "Missing"}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">{item.detail}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Populate these values in `.env` based on `.env.example`.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {active === "Security" && (
+            <div className="space-y-6">
+              <h1 className="text-lg font-semibold">Security and Compliance</h1>
+              <div className="rounded-lg border border-border bg-surface-2 p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Auto Live Compliance</span>
+                  <span
+                    className={cn(
+                      "text-xs font-semibold",
+                      hasCompletedComplianceChecklist(state.compliance.checklist) &&
+                        state.compliance.acknowledgedAt
+                        ? "text-success"
+                        : "text-warning",
+                    )}
+                  >
+                    {hasCompletedComplianceChecklist(state.compliance.checklist) &&
+                    state.compliance.acknowledgedAt
+                      ? "Ready"
+                      : "Pending"}
+                  </span>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {Object.entries(complianceChecklistLabels).map(([key, label]) => {
+                    const checked =
+                      state.compliance.checklist[key as keyof typeof state.compliance.checklist];
+                    return (
+                      <div key={key} className="rounded-md border border-border bg-surface-1 p-3">
+                        <div
+                          className={cn(
+                            "text-[10px] font-semibold uppercase tracking-wider",
+                            checked ? "text-success" : "text-warning",
+                          )}
+                        >
+                          {checked ? "Acknowledged" : "Pending"}
+                        </div>
+                        <div className="mt-1 text-xs text-muted-foreground">{label}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={() => setPaperTradingDays(state.compliance.paperTradingDays + 1)}
+                    className="rounded border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-surface-3 hover:text-foreground"
+                  >
+                    Add paper day
+                  </button>
+                  <button
+                    onClick={() => setRiskPatch({ newsBlockActive: !state.risk.newsBlockActive })}
+                    className="rounded border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-surface-3 hover:text-foreground"
+                  >
+                    Toggle news block
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {![
+            "Profile",
+            "TradingView",
+            "Broker",
+            "Data Providers",
+            "AI Providers",
+            "Security",
+          ].includes(active) && (
             <div className="space-y-6">
               <h1 className="text-lg font-semibold">{active}</h1>
               <div className="rounded-lg border border-border bg-surface-2 p-8 text-center">

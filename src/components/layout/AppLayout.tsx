@@ -2,21 +2,30 @@ import { useState } from "react";
 import { TopBar } from "@/components/layout/TopBar";
 import { LeftSidebar } from "@/components/layout/LeftSidebar";
 import { BottomPanel } from "@/components/layout/BottomPanel";
+import { useTradingControls } from "@/lib/trading-controls";
 import { Wifi, Monitor, Bot, Cpu } from "lucide-react";
 
-export function AppLayout({ children, rightSidebar }: { children: React.ReactNode; rightSidebar?: React.ReactNode }) {
+export function AppLayout({
+  children,
+  rightSidebar,
+}: {
+  children: React.ReactNode;
+  rightSidebar?: React.ReactNode;
+}) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { state } = useTradingControls();
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       <TopBar />
       <div className="flex flex-1 overflow-hidden">
-        <LeftSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+        <LeftSidebar
+          collapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        />
         <div className="flex flex-1 flex-col overflow-hidden">
           <div className="flex flex-1 overflow-hidden">
-            <main className="flex-1 overflow-y-auto scrollbar-thin">
-              {children}
-            </main>
+            <main className="flex-1 overflow-y-auto scrollbar-thin">{children}</main>
             {rightSidebar}
           </div>
           <BottomPanel />
@@ -31,7 +40,10 @@ export function AppLayout({ children, rightSidebar }: { children: React.ReactNod
           </span>
           <span className="flex items-center gap-1">
             <Wifi className="h-2.5 w-2.5" />
-            Broker: <span className="text-warning">Paper (Tradovate)</span>
+            Broker:{" "}
+            <span className={state.mode === "Auto Live" ? "text-danger" : "text-warning"}>
+              {state.mode === "Auto Live" ? "Live (Prop Firm)" : "Paper (Tradovate)"}
+            </span>
           </span>
           <span className="flex items-center gap-1">
             <Bot className="h-2.5 w-2.5" />
@@ -39,7 +51,10 @@ export function AppLayout({ children, rightSidebar }: { children: React.ReactNod
           </span>
           <span className="flex items-center gap-1">
             <Cpu className="h-2.5 w-2.5" />
-            Worker: <span className="text-success">Online</span>
+            Worker:{" "}
+            <span className={state.risk.killSwitchActive ? "text-danger" : "text-success"}>
+              {state.risk.killSwitchActive ? "Kill Switch Active" : "Online"}
+            </span>
           </span>
         </div>
         <span className="text-[10px] text-muted-foreground">v0.1.0-alpha</span>
