@@ -32,17 +32,71 @@ const sections = [
   { name: "Security", icon: ShieldCheck },
 ] as const;
 
+interface StackStatusResponse {
+  ok: boolean;
+  generatedAt: string;
+  env: {
+    tradingviewSecretConfigured: boolean;
+    supabaseUrlConfigured: boolean;
+    supabaseAnonConfigured: boolean;
+    supabaseServiceRoleConfigured: boolean;
+    sentryConfigured: boolean;
+    upstashConfigured: boolean;
+  };
+  readiness: {
+    webhookIngestion: boolean;
+    realtimeUi: boolean;
+    workerExecution: boolean;
+    observability: boolean;
+  };
+}
+
+interface WebhookHealthResponse {
+  ok: boolean;
+  service: string;
+  status: string;
+  lastWebhookReceivedAt: string | null;
+}
+
 function SettingsPage() {
   const [active, setActive] = useState<(typeof sections)[number]["name"]>("Profile");
   const [webhookUrl, setWebhookUrl] = useState(
     "https://api.ai-trading-office.app/api/webhooks/tradingview",
   );
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [stackStatus, setStackStatus] = useState<StackStatusResponse | null>(null);
+  const [webhookHealth, setWebhookHealth] = useState<WebhookHealthResponse | null>(null);
   const { state, setPaperTradingDays, setRiskPatch } = useTradingControls();
   const envStatus = getClientEnvStatus();
 
   useEffect(() => {
     setWebhookUrl(getTradingViewWebhookUrl());
+  }, []);
+
+  useEffect(() => {
+    const loadServerStatus = async () => {
+      try {
+        const stackResponse = await fetch("/api/stack/status", { cache: "no-store" });
+        if (stackResponse.ok) {
+          const stackJson = (await stackResponse.json()) as StackStatusResponse;
+          setStackStatus(stackJson);
+        }
+      } catch {
+        setStackStatus(null);
+      }
+
+      try {
+        const webhookResponse = await fetch("/api/webhooks/tradingview", { cache: "no-store" });
+        if (webhookResponse.ok) {
+          const webhookJson = (await webhookResponse.json()) as WebhookHealthResponse;
+          setWebhookHealth(webhookJson);
+        }
+      } catch {
+        setWebhookHealth(null);
+      }
+    };
+
+    loadServerStatus();
   }, []);
 
   const copyText = async (value: string, id: string) => {
@@ -116,9 +170,19 @@ function SettingsPage() {
               <div className="rounded-lg border border-border bg-surface-2 p-4">
                 <div className="mb-4 flex items-center justify-between">
                   <span className="text-sm font-medium">Connection Status</span>
-                  <span className="flex items-center gap-1.5 text-xs text-success">
-                    <span className="h-1.5 w-1.5 rounded-full bg-success" />
-                    Connected
+                  <span
+                    className={cn(
+                      "flex items-center gap-1.5 text-xs",
+                      webhookHealth?.ok ? "text-success" : "text-warning",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "h-1.5 w-1.5 rounded-full",
+                        webhookHealth?.ok ? "bg-success" : "bg-warning",
+                      )}
+                    />
+                    {webhookHealth?.ok ? "Endpoint Ready" : "Endpoint Unknown"}
                   </span>
                 </div>
 
@@ -152,9 +216,11 @@ function SettingsPage() {
                     </div>
                     <div className="rounded-md border border-border bg-surface-1 p-3">
                       <div className="text-[11px] text-muted-foreground">Last Webhook Received</div>
-                      <div className="mt-1 text-xs text-foreground">14s ago</div>
+                      <div className="mt-1 text-xs text-foreground">
+                        {webhookHealth?.lastWebhookReceivedAt ?? "No event yet"}
+                      </div>
                       <div className="mt-2 text-[11px] text-muted-foreground">
-                        Monitor: 4 alerts in last 3 min (limit warning at 12+)
+                        Monitor: Use alert rate checks in worker queue before order routing.
                       </div>
                     </div>
                   </div>
@@ -271,9 +337,32 @@ function SettingsPage() {
                         "Required for auth, realtime subscriptions, and database reads in UI.",
                     },
                     {
+                      label: "Default Workspace ID",
+                      ok: envStatus.workspaceConfigured,
+                      detail: "Used by realtime hooks to filter setup, trade, and agent streams.",
+                    },
+                    {
                       label: "Sentry DSN",
                       ok: envStatus.sentryConfigured,
                       detail: "Optional but recommended for frontend crash capture.",
+                    },
+                    {
+                      label: "Server Webhook Ingestion",
+                      ok: stackStatus?.readiness.webhookIngestion ?? false,
+                      detail:
+                        "Server has TradingView secret configured and webhook endpoint can authenticate payloads.",
+                    },
+                    {
+                      label: "Server Realtime Stack",
+                      ok: stackStatus?.readiness.realtimeUi ?? false,
+                      detail:
+                        "Server side has Supabase URL + anon key available for runtime status checks.",
+                    },
+                    {
+                      label: "Execution Queue",
+                      ok: stackStatus?.readiness.workerExecution ?? false,
+                      detail:
+                        "Upstash Redis configuration is present for queue-backed worker processing.",
                     },
                   ].map((item) => (
                     <div
@@ -297,6 +386,9 @@ function SettingsPage() {
                 </div>
                 <p className="mt-3 text-xs text-muted-foreground">
                   Populate these values in `.env` based on `.env.example`.
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Server status snapshot: {stackStatus?.generatedAt ?? "Unavailable"}
                 </p>
               </div>
             </div>
